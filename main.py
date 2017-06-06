@@ -8,6 +8,7 @@ GITLAB_URL = os.environ['GITLAB_URL']
 GITLAB_TOKEN = os.environ['GITLAB_TOKEN']
 GITLAB_PROJECTS = set(os.environ['GITLAB_PROJECTS'].split(','))
 SLACK_URL = os.environ['SLACK_URL']
+SLACK_CHANNEL = os.environ.get('SLACK_CHANNEL')
 
 
 def main():
@@ -57,7 +58,10 @@ def main():
         return
 
     message = 'There are unmerged MRs!\n\n' + '\n\n'.join(messages)
-    requests.post(SLACK_URL, json={'text': message})
+    payload = {'text': message}
+    if SLACK_CHANNEL:
+        payload['channel'] = '#' + SLACK_CHANNEL
+    requests.post(SLACK_URL, json=payload)
 
 
 if __name__ == '__main__':
