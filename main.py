@@ -44,7 +44,11 @@ def main():
                 assignee = '@' + mr['assignee']['username']
             else:
                 assignee = 'Unassigned'
-            sublist.append(f'{assignee}: {mr["title"]}')
+            if mr['labels']:
+                labels = ' '.join([f'[{label}]' for label in mr['labels']])
+            else:
+                labels = ''
+            sublist.append(f'{assignee}: {mr["created_at"][5:7]}/{mr["created_at"][8:10]} {mr["title"]} {labels}')
 
         unresolved[project['name_with_namespace']] = sublist
 
@@ -57,7 +61,7 @@ def main():
     if not messages:
         return
 
-    message = 'There are unmerged MRs!\n\n' + '\n\n'.join(messages)
+    message = 'Unmerged MRs!\n\n' + '\n\n'.join(messages)
     payload = {'text': message}
     if SLACK_CHANNEL:
         payload['channel'] = '#' + SLACK_CHANNEL
