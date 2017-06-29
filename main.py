@@ -24,6 +24,7 @@ def main():
     ).json()
     projects = [p for p in projects
                 if p['path_with_namespace'] in GITLAB_PROJECTS]
+    project_map = {p['name_with_namespace']: p['web_url'] for p in projects}
 
     unresolved = OrderedDict()
     for project in projects:
@@ -56,7 +57,8 @@ def main():
     for project_name, sublist in unresolved.items():
         if sublist:
             sublist = ''.join([f'- {l}\n' for l in sublist])
-            messages.append(f'{project_name}\n```\n{sublist}```')
+            project_link = f'{project_map[project_name]}/merge_requests'
+            messages.append(f'<{project_link}|{project_name}>\n```\n{sublist}```')
 
     if not messages:
         return
