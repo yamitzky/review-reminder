@@ -37,7 +37,6 @@ def main():
             },
             headers={'PRIVATE-TOKEN': GITLAB_TOKEN}
         ).json()
-        mrs = [mr for mr in mrs if not mr['title'].startswith('WIP')]
 
         sublist = []
         for mr in mrs:
