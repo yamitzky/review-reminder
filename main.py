@@ -11,6 +11,10 @@ SLACK_URL = os.environ['SLACK_URL']
 SLACK_CHANNEL = os.environ.get('SLACK_CHANNEL')
 
 
+MR_TEMPLATE="""
+    • {assignee} <{url}|*{title}*> {labels} ({created_at}〜)
+"""[1:-1]
+
 def main():
     # TODO: pagination
     projects = requests.get(
@@ -45,25 +49,31 @@ def main():
             else:
                 assignee = 'Unassigned'
             if mr['labels']:
-                labels = ' '.join([f'[{label}]' for label in mr['labels']])
+                labels = ' '.join([f'`{label}`' for label in mr['labels']])
             else:
                 labels = ''
-            sublist.append(f'{assignee}: {mr["created_at"][5:7]}/{mr["created_at"][8:10]} {mr["title"]} {labels}')
+            sublist.append(MR_TEMPLATE.format(**{
+                'assignee': assignee,
+                'url': mr['web_url'],
+                'title': mr['title'],
+                'labels': labels,
+                'created_at': f'{mr["created_at"][5:7]}/{mr["created_at"][8:10]}'
+            }))
 
         unresolved[project['name_with_namespace']] = sublist
 
     messages = []
     for project_name, sublist in unresolved.items():
         if sublist:
-            sublist = ''.join([f'- {l}\n' for l in sublist])
+            sublist = ''.join([f'{l}\n' for l in sublist])
             project_link = f'{project_map[project_name]}/merge_requests'
-            messages.append(f'<{project_link}|{project_name}>\n```\n{sublist}```')
+            messages.append(f'<{project_link}|*{project_name}*>\n{sublist}')
 
     if not messages:
         return
 
     message = 'Unmerged MRs!\n\n' + '\n\n'.join(messages)
-    payload = {'text': message}
+    payload = {'text': message, 'link_names': 1}
     if SLACK_CHANNEL:
         payload['channel'] = '#' + SLACK_CHANNEL
     requests.post(SLACK_URL, json=payload)
