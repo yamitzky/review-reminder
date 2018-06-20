@@ -11,9 +11,10 @@ SLACK_URL = os.environ['SLACK_URL']
 SLACK_CHANNEL = os.environ.get('SLACK_CHANNEL')
 
 
-MR_TEMPLATE="""
+MR_TEMPLATE = """
     • {assignee} <{url}|*{title}*> {labels} ({created_at}〜)
 """[1:-1]
+
 
 def main():
     # TODO: pagination
@@ -42,25 +43,27 @@ def main():
             headers={'PRIVATE-TOKEN': GITLAB_TOKEN}
         ).json()
 
-        sublist = []
-        for mr in mrs:
-            if mr.get("assignee"):
-                assignee = '@' + mr['assignee']['username']
-            else:
-                assignee = 'Unassigned'
-            if mr['labels']:
-                labels = ' '.join([f'`{label}`' for label in mr['labels']])
-            else:
-                labels = ''
-            sublist.append(MR_TEMPLATE.format(**{
-                'assignee': assignee,
-                'url': mr['web_url'],
-                'title': mr['title'],
-                'labels': labels,
-                'created_at': f'{mr["created_at"][5:7]}/{mr["created_at"][8:10]}'
-            }))
-
-        unresolved[project['name_with_namespace']] = sublist
+        if isinstance(mrs, list):
+            sublist = []
+            for mr in mrs:
+                if mr.get("assignee"):
+                    assignee = '@' + mr['assignee']['username']
+                else:
+                    assignee = 'Unassigned'
+                if mr['labels']:
+                    labels = ' '.join([f'`{label}`' for label in mr['labels']])
+                else:
+                    labels = ''
+                sublist.append(MR_TEMPLATE.format(**{
+                    'assignee': assignee,
+                    'url': mr['web_url'],
+                    'title': mr['title'],
+                    'labels': labels,
+                    'created_at': f'{mr["created_at"][5:7]}/{mr["created_at"][8:10]}'
+                }))
+            unresolved[project['name_with_namespace']] = sublist
+        else:
+            unresolved[project['name_with_namespace']] = [f'Whoops, something went wrong: {mrs}']
 
     messages = []
     for project_name, sublist in unresolved.items():
